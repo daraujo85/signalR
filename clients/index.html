@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Chat Example</title>
+    <style>
+        #chat-container {
+            width: 400px;
+            margin: 0 auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        #message-list {
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        #message-form {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>SignalR Chat Example</h1>
+        <div id="message-list"></div>
+        <form id="message-form">
+            <input type="text" id="user-input" placeholder="Your name" required />
+            <input type="text" id="message-input" placeholder="Type a message" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.12/signalr.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl("http://localhost:5150/myhub")
+                .build();
+
+            connection.on("ReceiveMessage", function (user, message) {
+                var messageItem = "<strong>" + user + ":</strong> " + message;
+                $("#message-list").append("<p>" + messageItem + "</p>");
+                $("#message-list").scrollTop($("#message-list")[0].scrollHeight);
+            });
+
+            connection.start()
+                .then(function () {
+                    console.log("SignalR connection established.");
+                })
+                .catch(function (error) {
+                    console.error("Error starting SignalR connection: " + error);
+                });
+
+            $("#message-form").submit(function (event) {
+                event.preventDefault();
+                var user = $("#user-input").val();
+                var message = $("#message-input").val();
+
+                connection.invoke("SendMessage", user, message)
+                    .catch(function (error) {
+                        console.error("Error invoking SignalR method: " + error);
+                    });
+
+                $("#message-input").val("");
+            });
+        });
+    </script>
+</body>
+</html>
